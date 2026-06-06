@@ -1,0 +1,17 @@
+# Оригінали фото — великі (~3.8 ГБ), у веб не публікуються.
+# Потрібні лише локально, щоб генерувати оптимізовані версії у web/.
+photos/
+
+# Службові файли macOS / Windows
+._*
+.DS_Store
+Thumbs.db
+desktop.ini
+*.ini
+
+# Стара версія сайту (не публікується)
+ostrohliad_portfolio.html
+
+# Python
+__pycache__/
+*.pyc

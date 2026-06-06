@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Бронювання — Ostrohliad</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--cream:#f8f5f0;--bone:#eae4d9;--charcoal:#141414;--warm-gray:#6b6358;--accent:#a9824f;--white:#fff;--text:#3d362d}
+html{font-size:17px;scroll-behavior:smooth}
+body{font-family:'Montserrat',sans-serif;background:var(--cream);color:var(--text);font-weight:400;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;justify-content:space-between;align-items:center;padding:1.3rem 2rem;background:rgba(248,245,240,0.94);backdrop-filter:blur(10px);border-bottom:1px solid rgba(169,130,79,0.14)}
+.logo{font-family:'Cormorant Garamond',serif;font-size:1.4rem;letter-spacing:0.18em;text-decoration:none;text-transform:lowercase}
+.back{font-size:0.72rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--warm-gray);text-decoration:none}
+.back:hover{color:var(--charcoal)}
+.book-wrap{max-width:1080px;margin:0 auto;padding:7rem 2rem 5rem}
+.book-head{text-align:center;margin-bottom:3rem}
+.book-head .label{font-size:0.7rem;letter-spacing:0.26em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:0.7rem}
+.book-head h1{font-family:'Cormorant Garamond',serif;font-size:3rem;font-weight:300;line-height:1.1}
+.book-head p{color:var(--warm-gray);margin-top:0.9rem;font-size:0.96rem}
+.book-grid{display:grid;grid-template-columns:1.2fr 0.8fr;gap:3rem;align-items:start}
+.cal{background:var(--white);border:1px solid rgba(169,130,79,0.2);padding:1.8rem}
+.cal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.3rem}
+.cal-nav{background:none;border:1px solid rgba(169,130,79,0.3);width:38px;height:38px;font-size:1.3rem;line-height:1;cursor:pointer;color:var(--accent);transition:all 0.2s}
+.cal-nav:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.cal-nav:disabled{opacity:0.3;cursor:default;background:none;color:var(--accent)}
+.cal-title{font-family:'Cormorant Garamond',serif;font-size:1.5rem}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-dow{text-align:center;font-size:0.66rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--warm-gray);padding-bottom:0.4rem}
+.cal-day{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-size:0.95rem;border:1px solid transparent;cursor:pointer;transition:all 0.2s}
+.cal-day:hover:not(.disabled):not(.empty){border-color:var(--accent)}
+.cal-day.disabled{color:rgba(61,54,45,0.22);cursor:default}
+.cal-day.empty{cursor:default}
+.cal-day.selected{background:var(--charcoal);color:#fff}
+.slots{margin-top:2rem}
+.slots h3{font-size:0.72rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:1rem}
+.slot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:8px}
+.slot{padding:0.75rem 0;text-align:center;border:1px solid rgba(169,130,79,0.3);background:transparent;font-family:inherit;font-size:0.92rem;color:var(--text);cursor:pointer;transition:all 0.2s}
+.slot:hover{border-color:var(--accent)}
+.slot.selected{background:var(--charcoal);color:#fff;border-color:var(--charcoal)}
+.summary{background:var(--charcoal);color:#fff;padding:2.2rem;position:sticky;top:6rem}
+.summary h2{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:1.7rem;margin-bottom:1.5rem}
+.sum-row{display:flex;justify-content:space-between;gap:1rem;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.1);font-size:0.94rem}
+.sum-row span:first-child{color:rgba(255,255,255,0.5)}
+.sum-total{display:flex;justify-content:space-between;align-items:baseline;margin:1.5rem 0 0.3rem}
+.sum-total .lbl{font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.5)}
+.sum-total .amt{font-family:'Cormorant Garamond',serif;font-size:2.1rem;color:var(--accent)}
+.pay-btn{display:block;width:100%;margin-top:1.6rem;padding:1.15rem;background:var(--accent);color:#fff;border:none;font-family:inherit;font-size:0.78rem;font-weight:400;letter-spacing:0.16em;text-transform:uppercase;cursor:pointer;transition:opacity 0.3s}
+.pay-btn:hover:not(:disabled){opacity:0.88}
+.pay-btn:disabled{opacity:0.35;cursor:default}
+.pay-note{font-size:0.8rem;color:rgba(255,255,255,0.45);line-height:1.65;margin-top:1.1rem}
+.pay-msg{font-size:0.88rem;line-height:1.65;margin-top:1.1rem}
+.pay-msg a{color:var(--accent)}
+@media(max-width:860px){.book-grid{grid-template-columns:1fr;gap:2rem}.summary{position:static}}
+@media(max-width:600px){.book-wrap{padding:6rem 1.1rem 3rem}.book-head h1{font-size:2.3rem}.cal{padding:1.2rem}.cal-grid{gap:4px}.slot-grid{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="logo" href="index.html">ostrohliad</a>
+  <a class="back" href="index.html">&larr; На головну</a>
+</nav>
+
+<div class="book-wrap">
+  <div class="book-head">
+    <span class="label">Бронювання</span>
+    <h1>Оберіть дату та час</h1>
+    <p>Передоплата 1000 грн підтверджує бронювання і зараховується у вартість зйомки.</p>
+  </div>
+  <div class="book-grid">
+    <div>
+      <div class="cal">
+        <div class="cal-top">
+          <button class="cal-nav" id="prev" aria-label="Попередній місяць">&#x2039;</button>
+          <span class="cal-title" id="cal-title"></span>
+          <button class="cal-nav" id="next" aria-label="Наступний місяць">&#x203a;</button>
+        </div>
+        <div class="cal-grid" id="cal-dows"></div>
+        <div class="cal-grid" id="cal-days" style="margin-top:6px"></div>
+      </div>
+      <div class="slots" id="slots" style="display:none">
+        <h3>Доступний час</h3>
+        <div class="slot-grid" id="slot-grid"></div>
+      </div>
+    </div>
+    <div class="summary">
+      <h2>Ваше бронювання</h2>
+      <div class="sum-row"><span>Дата</span><span id="sum-date">—</span></div>
+      <div class="sum-row"><span>Час</span><span id="sum-time">—</span></div>
+      <div class="sum-total"><span class="lbl">Передоплата</span><span class="amt">1000 грн</span></div>
+      <button class="pay-btn" id="pay" disabled>Сплатити та забронювати</button>
+      <p class="pay-note">Оберіть дату й час, щоб продовжити. Решта вартості зйомки сплачується після узгодження деталей.</p>
+      <p class="pay-msg" id="pay-msg"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEPOSIT=1000;
+const BOOKING_API="";
+const PAYMENT_LINK="";
+const INSTAGRAM_USER="ostrohliad.k";
+const HOUR_START=10, HOUR_END=19, STEP=60;
+
+// повернення після оплати Monobank (redirectUrl ...?paid=1)
+if(new URLSearchParams(location.search).get('paid')==='1'){
+  const m=document.getElementById('pay-msg');
+  m.style.color='#cdbfa6';
+  m.innerHTML='Дякуємо! Оплату отримано. Я зв\'яжуся з вами найближчим часом для підтвердження деталей зйомки.';
+}
+const MONTHS=["Січень","Лютий","Березень","Квітень","Травень","Червень","Липень","Серпень","Вересень","Жовтень","Листопад","Грудень"];
+const DOWS=["Пн","Вт","Ср","Чт","Пт","Сб","Нд"];
+const today=new Date(); today.setHours(0,0,0,0);
+let view=new Date(today.getFullYear(),today.getMonth(),1);
+let selDate=null, selTime=null;
+
+document.getElementById('cal-dows').innerHTML=DOWS.map(d=>'<div class="cal-dow">'+d+'</div>').join('');
+
+function sameDay(a,b){return a&&b&&a.getTime()===b.getTime();}
+function fmtDate(d){return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();}
+
+function renderCal(){
+  const y=view.getFullYear(), m=view.getMonth();
+  document.getElementById('cal-title').textContent=MONTHS[m]+' '+y;
+  const startDow=(new Date(y,m,1).getDay()+6)%7;
+  const days=new Date(y,m+1,0).getDate();
+  let html='';
+  for(let i=0;i<startDow;i++) html+='<div class="cal-day empty"></div>';
+  for(let d=1;d<=days;d++){
+    const date=new Date(y,m,d);
+    const past=date<today;
+    const sel=sameDay(date,selDate);
+    html+='<div class="cal-day'+(past?' disabled':'')+(sel?' selected':'')+'" data-d="'+d+'">'+d+'</div>';
+  }
+  document.getElementById('cal-days').innerHTML=html;
+  document.querySelectorAll('#cal-days .cal-day:not(.disabled):not(.empty)').forEach(el=>{
+    el.onclick=()=>{selDate=new Date(y,m,+el.dataset.d);selTime=null;renderCal();renderSlots();updateSummary();};
+  });
+  const curStart=new Date(today.getFullYear(),today.getMonth(),1);
+  document.getElementById('prev').disabled=(new Date(y,m,1)<=curStart);
+}
+function renderSlots(){
+  const wrap=document.getElementById('slots');
+  if(!selDate){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  const now=new Date();
+  const isToday=sameDay(selDate,today);
+  let html='';
+  for(let mins=HOUR_START*60; mins<HOUR_END*60; mins+=STEP){
+    const hh=Math.floor(mins/60), mm=mins%60;
+    const t=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+    const passed=isToday && (hh<now.getHours() || (hh===now.getHours() && mm<=now.getMinutes()));
+    if(passed) continue;
+    html+='<button class="slot'+(selTime===t?' selected':'')+'" data-t="'+t+'">'+t+'</button>';
+  }
+  document.getElementById('slot-grid').innerHTML=html || '<p style="color:var(--warm-gray);font-size:0.9rem">На цей день вільних слотів немає — оберіть інший день.</p>';
+  document.querySelectorAll('.slot').forEach(b=>b.onclick=()=>{selTime=b.dataset.t;renderSlots();updateSummary();});
+}
+function updateSummary(){
+  document.getElementById('sum-date').textContent=selDate?fmtDate(selDate):'—';
+  document.getElementById('sum-time').textContent=selTime||'—';
+  document.getElementById('pay').disabled=!(selDate&&selTime);
+}
+document.getElementById('prev').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()-1,1);renderCal();};
+document.getElementById('next').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()+1,1);renderCal();};
+document.getElementById('pay').onclick=async()=>{
+  if(!(selDate&&selTime)) return;
+  const btn=document.getElementById('pay'), msg=document.getElementById('pay-msg');
+  const details='Бронювання зйомки: '+fmtDate(selDate)+' о '+selTime+'. Передоплата '+DEPOSIT+' грн.';
+  msg.style.color='#cdbfa6';
+
+  // 1) Monobank Acquiring через бекенд: створюємо інвойс і йдемо на сторінку оплати
+  if(BOOKING_API){
+    btn.disabled=true; const orig=btn.textContent; btn.textContent='Створюємо оплату…';
+    try{
+      const r=await fetch(BOOKING_API,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({date:fmtDate(selDate),time:selTime,amount:DEPOSIT})});
+      const d=await r.json();
+      if(r.ok && d.pageUrl){ window.location.href=d.pageUrl; return; }
+      throw new Error(d.error||'no pageUrl');
+    }catch(e){
+      btn.disabled=false; btn.textContent=orig;
+      msg.style.color='#e0a89a';
+      msg.innerHTML='Не вдалося створити оплату автоматично. Напишіть, будь ласка, в <a href="https://ig.me/m/'+INSTAGRAM_USER+'" target="_blank" rel="noopener">Direct</a> — підтвердимо бронювання вручну.';
+    }
+    return;
+  }
+
+  // 2) Запасний варіант: статичне платіжне посилання
+  try{await navigator.clipboard.writeText(details);}catch(e){}
+  if(PAYMENT_LINK){
+    window.open(PAYMENT_LINK,'_blank','noopener');
+    msg.innerHTML='Відкрили сторінку оплати передоплати ('+DEPOSIT+' грн). Деталі бронювання скопійовано — після оплати напишіть мені в <a href="https://ig.me/m/'+INSTAGRAM_USER+'" target="_blank" rel="noopener">Direct</a> для підтвердження.';
+  }else{
+    // 3) Без оплати: підтвердження через Direct
+    window.open('https://ig.me/m/'+INSTAGRAM_USER,'_blank','noopener');
+    msg.innerHTML='Деталі бронювання скопійовано. Відкрили Instagram Direct — надішліть повідомлення, і я підтверджу дату та надішлю реквізити для передоплати ('+DEPOSIT+' грн).';
+  }
+};
+renderCal();
+</script>
+</body>
+</html>
