@@ -1,0 +1,10 @@
+name = "ostrohliad-pay"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Публічні змінні (не секрети). SITE_URL потрібен для повернення після оплати.
+[vars]
+SITE_URL = "https://ostrohliad-k.github.io"
+
+# Секрет MONOBANK_TOKEN додається окремо (не в цьому файлі):
+#   wrangler secret put MONOBANK_TOKEN

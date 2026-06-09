@@ -333,20 +333,21 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content
 .stat-num{font-family:'Cormorant Garamond',serif;font-size:2.8rem;font-weight:300;color:var(--accent);display:block;line-height:1}
 .stat-label{font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-top:0.4rem;display:block}
 
-.philosophy{padding:7rem 3.5rem;background:var(--cream)}
-.phil-head{max-width:840px;margin:0 auto 2.2rem;text-align:center}
-.phil-head .section-title em{font-style:italic;color:var(--accent)}
-.phil-lead{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:2.1rem;line-height:1.4;color:var(--charcoal);text-align:center;max-width:780px;margin:0 auto 2.2rem}
-.phil-text{max-width:720px;margin:0 auto}
-.phil-text p{font-size:1.06rem;line-height:1.95;color:var(--text);margin-bottom:1.4rem}
-.phil-text p strong{color:var(--charcoal);font-weight:400}
-.phil-media{display:grid;grid-template-columns:repeat(3,1fr);gap:1.3rem;margin-top:3.8rem;align-items:start}
-.phil-media img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:var(--bone);filter:grayscale(12%)}
-.phil-media img:nth-child(2){transform:translateY(2.2rem)}
-.phil-quote{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:2.2rem;font-weight:300;line-height:1.42;color:var(--charcoal);text-align:center;max-width:900px;margin:5rem auto 0}
+.philosophy{padding:7rem 3.5rem;background:var(--charcoal)}
+.phil-grid{display:grid;grid-template-columns:1.05fr 0.95fr;gap:4.5rem;align-items:center}
+.philosophy .section-title{color:#fff}
+.philosophy .section-title em{font-style:italic;color:var(--accent)}
+.phil-lead{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.95rem;line-height:1.45;color:rgba(255,255,255,0.9);margin:1.6rem 0 1.8rem}
+.phil-text p{font-size:1.02rem;line-height:1.9;color:rgba(255,255,255,0.58);margin-bottom:1.3rem}
+.phil-text p strong{color:#fff;font-weight:400}
+.phil-media{display:flex;gap:1.1rem;align-items:flex-start}
+.phil-col{flex:1;display:flex;flex-direction:column;gap:1.1rem}
+.phil-col-offset{margin-top:3.5rem}
+.phil-media img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#1f1f1f;filter:grayscale(10%)}
+.phil-quote{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:2.2rem;font-weight:300;line-height:1.42;color:#fff;text-align:center;max-width:900px;margin:5rem auto 0}
 .phil-quote::before{content:'';display:block;width:42px;height:1px;background:var(--accent);margin:0 auto 2rem}
-.phil-mission{max-width:680px;margin:2.8rem auto 0;text-align:center}
-.phil-mission p{font-size:1.06rem;line-height:1.95;color:var(--text)}
+.phil-mission{max-width:680px;margin:2.6rem auto 0;text-align:center}
+.phil-mission p{font-size:1.04rem;line-height:1.9;color:rgba(255,255,255,0.58)}
 .phil-mission strong{color:var(--accent);font-weight:400}
 
 .process{padding:7rem 3.5rem;background:var(--bone)}
@@ -435,8 +436,9 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
   .cat-square-label{font-size:2rem}
   .about{flex-direction:column;gap:2.5rem}
   .about-img{flex:none;width:100%;height:380px}
-  .phil-head{margin-bottom:2rem}
-  .phil-media{gap:1rem;margin-top:2.8rem}
+  .phil-grid{grid-template-columns:1fr;gap:2.8rem}
+  .phil-media{gap:1rem;max-width:560px}
+  .phil-col-offset{margin-top:2.5rem}
   .phil-quote{font-size:1.8rem;margin-top:3rem}
   .process-grid{grid-template-columns:1fr 1fr}
   .result-items{grid-template-columns:repeat(2,1fr)}
@@ -459,10 +461,8 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
   .shoot-grid{grid-template-columns:1fr}
   .photo-grid{columns:1}
   .price-grid{grid-template-columns:1fr}
-  .phil-lead{font-size:1.7rem}
-  .phil-media{grid-template-columns:1fr;gap:1rem}
-  .phil-media img{aspect-ratio:4/5}
-  .phil-media img:nth-child(2){transform:none}
+  .phil-lead{font-size:1.6rem}
+  .phil-col-offset{margin-top:1.5rem}
   .phil-quote{font-size:1.55rem}
   .process-grid{grid-template-columns:1fr}
   .process-step{border-right:none;border-bottom:1px solid rgba(184,154,106,0.25);padding:2rem 0}
@@ -481,7 +481,6 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
   <a class="logo" href="#">ostrohliad</a>
   <ul class="nav-links" id="nav-links">
     <li><a href="#gallery" onclick="closeMenu()">Портфоліо</a></li>
-    <li><a href="#about" onclick="closeMenu()">Про мене</a></li>
     <li><a href="#philosophy" onclick="closeMenu()">Філософія</a></li>
     <li><a href="#process" onclick="closeMenu()">Процес</a></li>
     <li><a href="#prices" onclick="closeMenu()">Ціни</a></li>
@@ -512,38 +511,25 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
   <div id="gallery-body"></div>
 </section>
 
-<section class="about fade-up" id="about">
-  <div class="about-img">
-    <img src="__ABOUT__" alt="Ostrohliad">
-  </div>
-  <div class="about-text">
-    <span class="section-label" style="color:var(--accent)">Про мене</span>
-    <h2 class="section-title">Ostrohliad<br><em style="font-style:italic;color:rgba(255,255,255,0.4);font-size:2.2rem">Директор &amp; Фотограф</em></h2>
-    <p class="about-body">Я займаюсь фотографією та режисурою музичних відео. Знімаю сімейні, індивідуальні та репортажні проєкти — кожен зі своїм настроєм і своєю мовою.</p>
-    <p class="about-body">Кожна зйомка — це довіра, комфорт і результат, який хочеться показувати роками.</p>
-    <div class="about-stats">
-      <div><span class="stat-num">7+</span><span class="stat-label">Років досвіду</span></div>
-      <div><span class="stat-num">200+</span><span class="stat-label">Проєктів</span></div>
-      <div><span class="stat-num">4</span><span class="stat-label">Напрямки</span></div>
-    </div>
-  </div>
-</section>
-
 <section class="philosophy fade-up" id="philosophy">
-  <div class="phil-head">
-    <span class="section-label" style="color:var(--accent)">Моя філософія</span>
-    <h2 class="section-title">Фотографія — мій<br>психологічний <em>інструмент</em></h2>
-  </div>
-  <p class="phil-lead">Мало хто знає, але врятувала мене саме фотографія.</p>
-  <div class="phil-text">
-    <p>Колись моя невпевненість у собі сягала нереальних вершин. Я постійно сумнівалася — чи правильно сказала, чи правильно вчинила, як виглядаю збоку. У мене був безкінечний перелік внутрішніх станів, які заважали просто <strong>жити</strong>.</p>
-    <p>На зйомках я ніби грала роль кращої версії себе — тієї, якою хочу бути, але не наважуюся. А потім, дозволяючи собі все більше зйомок і образів, я почала переносити це відчуття у своє реальне життя: <strong>красива, варта, впевнена</strong>.</p>
-    <p>Після кожної фотосесії, коли я бачила на фото ту Я, якою хочу бути завжди, — зі мною ставалися справжні зміни. Я почала обирати себе там, де раніше підлаштовувалася. Спорт, медитації, турбота про себе прийшли в моє життя завдяки відчуттю, що я — головна героїня власної історії.</p>
-  </div>
-  <div class="phil-media">
-    <img src="__PHIL1__" alt="" loading="lazy">
-    <img src="__PHIL2__" alt="" loading="lazy">
-    <img src="__PHIL3__" alt="" loading="lazy">
+  <div class="phil-grid">
+    <div class="phil-text">
+      <span class="section-label" style="color:var(--accent)">Моя філософія</span>
+      <h2 class="section-title">Фотографія — мій<br>психологічний <em>інструмент</em></h2>
+      <p class="phil-lead">Мало хто знає, але врятувала мене саме фотографія.</p>
+      <p>Колись моя невпевненість у собі сягала нереальних вершин. Я постійно сумнівалася — чи правильно сказала, чи правильно вчинила, як виглядаю збоку. У мене був безкінечний перелік внутрішніх станів, які заважали просто <strong>жити</strong>.</p>
+      <p>На зйомках я ніби грала роль кращої версії себе — тієї, якою хочу бути, але не наважуюся. А потім, дозволяючи собі все більше зйомок і образів, я почала переносити це відчуття у своє реальне життя: <strong>красива, варта, впевнена</strong>.</p>
+      <p>Після кожної фотосесії, коли я бачила на фото ту Я, якою хочу бути завжди, — зі мною ставалися справжні зміни. Я почала обирати себе там, де раніше підлаштовувалася. Спорт, медитації, турбота про себе прийшли в моє життя завдяки відчуттю, що я — головна героїня власної історії.</p>
+    </div>
+    <div class="phil-media">
+      <div class="phil-col">
+        <img src="__PHIL1__" alt="" loading="lazy">
+        <img src="__PHIL3__" alt="" loading="lazy">
+      </div>
+      <div class="phil-col phil-col-offset">
+        <img src="__PHIL2__" alt="" loading="lazy">
+      </div>
+    </div>
   </div>
   <blockquote class="phil-quote">«Я головна героїня власного життя —<br>прямо по центру кадру»</blockquote>
   <div class="phil-mission">
