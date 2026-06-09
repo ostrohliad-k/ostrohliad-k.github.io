@@ -1,4 +1,4 @@
-import os, re, json
+import os, re, json, unicodedata, glob
 
 # ══════════════════════════════════════════════════════════════════
 #  НАЛАШТУВАННЯ
@@ -38,37 +38,80 @@ PAYMENT_LINK    = ""
 BOOKING_HOURS   = (10, 19)                 # з 10:00 до 19:00
 BOOKING_STEP_MIN = 60                      # крок, хвилин
 
-# Категорії: folder — назва підпапки, label — назва на сайті
+# Категорії: folder — назва підпапки, label — назва на сайті. Порядок = порядок на сайті.
 CATEGORIES = {
-    "family":     {"folder": "Family",     "label": "Сімейні фото"},
-    "individual": {"folder": "Individual", "label": "Індивідуальні зйомки"},
+    "individual": {"folder": "Individual", "label": "Індивідуальні та портретні зйомки"},
+    "family":     {"folder": "Family",     "label": "Love story"},
     "reportage":  {"folder": "Reportage",  "label": "Репортажні зйомки"},
     "wedding":    {"folder": "Wedding",    "label": "Весілля"},
 }
 
 # Обкладинка категорії (квадрат у портфоліо). Вкажіть шлях до фото-оригіналу
 # в папці photos/. Якщо порожньо — береться перше фото першої зйомки.
-# Приклад: "family": "photos/Family/2024-09-07_Family_shoot_harmony/файл.jpg"
 CATEGORY_COVERS = {
-    "family":     "photos/Family/2026-04-28_Family_shoot/2026-04-28_3885309885617553781.jpg",
-    "individual": "",
-    "reportage":  "",
+    "individual": "photos/Individual/Anna/photo-243.JPG",
+    "family":     "photos/Family/2026-04-28_Family_shoot/2026-04-28_3885309812192130891.jpg",
+    "reportage":  "photos/Reportage/HB Mari/photo-514.JPG",
     "wedding":    "",
 }
+
+# Перенесення окремих зйомок між категоріями (назва папки -> ключ категорії)
+MOVE_SHOOTS = {
+    "2020-09-01_Love_stories_in_shoots": "family",
+    "ALINA RETRO":                       "family",
+    "2026-02-19_Shoot_with_Musya":       "family",
+}
+
+# Фото для розділу «Моя філософія» (2 шт.) та для кроку 1 «Процес»
+PHIL_PHOTOS = ["photos/Philosophy/IMG_6878.JPG", "photos/Philosophy/IMG_6932.JPG", "photos/Philosophy/IMG_8714.JPG"]
+STYLE_PHOTO = "photos/Style/IMG_8448.JPG"
 # ══════════════════════════════════════════════════════════════════
 
 EXTS = {".jpg", ".jpeg", ".png", ".webp"}
 
 
+def normalize_title(name):
+    """Приводить назву папки до єдиного стилю (Title Case), щоб назви зйомок
+    на сайті виглядали однаково. Прибирає дату-префікс, підкреслення, дужки,
+    приховані/службові символи та технічні префікси (HB, F1/F2/F3).
+    Напр.: 'ALINA RETRO'->'Alina Retro', 'HB Mari'->'Mari',
+    '2020-09-01_Love_stories_in_shoots'->'Love Stories'."""
+    # прибрати дату-префікс
+    name = re.sub(r"^\d{4}[-_]\d{1,2}[-_]\d{1,2}[ _-]+", "", name)
+    # прибрати приховані символи (приватна зона U+E000..U+F8FF та керівні)
+    name = "".join(ch for ch in name
+                   if not (0xE000 <= ord(ch) <= 0xF8FF)
+                   and unicodedata.category(ch)[0] != "C")
+    name = name.replace("_", " ")
+    name = re.sub(r"[()]", " ", name)
+    # прибрати технічні префікси: HB (Happy Birthday), F1/F2/F3 (родинні)
+    name = re.sub(r"^\s*(HB|F\d)\s+", "", name, flags=re.IGNORECASE)
+    name = re.sub(r"\s+", " ", name).strip()
+    return name.title()
+
+
 def parse_shoot_name(name):
-    """'2023-05-17_Pregnancy_photoshoot_Alinochka' -> ('Pregnancy photoshoot Alinochka', '17.05.2023')
-    Підтримує і '-' і '_' як роздільники, а також одно- та двозначні місяць/день
-    (напр. '2026_01_6 morozovu' -> ('morozovu', '06.01.2026'))."""
-    m = re.match(r"^(\d{4})[-_](\d{1,2})[-_](\d{1,2})[ _-]+(.+)$", name)
-    if m:
-        y, mo, d, rest = m.groups()
-        return rest.replace("_", " ").strip(), f"{int(d):02d}.{int(mo):02d}.{y}"
-    return name.replace("_", " ").strip(), ""
+    """Повертає (нормалізована назва, '') — дати в назвах не показуємо."""
+    return normalize_title(name), ""
+
+
+def resolve_cover(path):
+    """Знаходить файл обкладинки, навіть якщо в назві папки є прихований символ.
+    У конфізі шлях можна писати 'чистою' назвою (напр. .../Anna/photo-243.JPG)."""
+    if not path:
+        return ""
+    if os.path.exists(path):
+        return path
+    parent, fname = os.path.split(path)
+    grand, folder = os.path.split(parent)
+    if os.path.isdir(grand):
+        clean = lambda s: "".join(c for c in s if ord(c) < 0xE000)
+        for sub in os.listdir(grand):
+            if clean(sub) == folder:
+                cand = os.path.join(grand, sub, fname)
+                if os.path.exists(cand):
+                    return cand.replace("\\", "/")
+    return path
 
 
 def photos_in(path):
@@ -141,6 +184,8 @@ def scan_category(folder_name):
 
     # підпапки = окремі зйомки
     for shoot_name in sorted(os.listdir(base)):
+        if shoot_name.startswith("."):
+            continue
         shoot_path = os.path.join(base, shoot_name)
         if not os.path.isdir(shoot_path):
             continue
@@ -148,7 +193,8 @@ def scan_category(folder_name):
         if not photos:
             continue
         title, date = parse_shoot_name(shoot_name)
-        shoots.append({"title": title, "date": date, "photos": optimize_list(photos)})
+        shoots.append({"title": title, "date": date, "folder": shoot_name,
+                       "photos": optimize_list(photos)})
 
     return shoots
 
@@ -158,17 +204,35 @@ CATEGORIES_LABEL = {v["folder"]: v["label"] for v in CATEGORIES.values()}
 
 def build_data():
     data = {}
+    for key, info in CATEGORIES.items():
+        data[key] = {"label": info["label"], "shoots": scan_category(info["folder"])}
+
+    # перенесення окремих зйомок між категоріями
+    for folder_name, target in MOVE_SHOOTS.items():
+        if target not in data:
+            continue
+        for key in list(data.keys()):
+            if key == target:
+                continue
+            for s in data[key]["shoots"][:]:
+                if s.get("folder") == folder_name:
+                    data[key]["shoots"].remove(s)
+                    data[target]["shoots"].append(s)
+                    print(f"  → перенесено '{folder_name}' у категорію '{target}'")
+
+    # обкладинки + підрахунок
     total = 0
     for key, info in CATEGORIES.items():
-        shoots = scan_category(info["folder"])
+        shoots = data[key]["shoots"]
         n = sum(len(s["photos"]) for s in shoots)
         total += n
-        data[key] = {"label": info["label"], "shoots": shoots}
-        cover_src = CATEGORY_COVERS.get(key, "")
+        cover_src = resolve_cover(CATEGORY_COVERS.get(key, ""))
         if cover_src and os.path.exists(cover_src):
             data[key]["cover"] = optimize(cover_src)[0]   # прев'ю-обкладинка
-        elif cover_src:
-            print(f"  [!] Обкладинку '{cover_src}' не знайдено — беру перше фото")
+        elif CATEGORY_COVERS.get(key):
+            print(f"  [!] Обкладинку '{CATEGORY_COVERS.get(key)}' не знайдено — беру перше фото")
+        for s in shoots:           # прибрати службовий ключ перед JSON
+            s.pop("folder", None)
         print(f"  {info['folder']}: {len(shoots)} зйомок, {n} фото")
     return data, total
 
@@ -202,7 +266,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(to right,rgba(20,20,20,0.78) 0%,rgba(20,20,20,0.1) 60%,rgba(20,20,20,0.42) 100%)}
 .hero-content{position:relative;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;padding:0 3.5rem 5.5rem;max-width:620px}
 .hero-label{font-size:0.68rem;letter-spacing:0.32em;text-transform:uppercase;color:var(--accent);margin-bottom:1.2rem;display:block}
-.hero-title{font-family:'Cormorant Garamond',serif;font-size:4.8rem;font-weight:300;line-height:1.07;color:var(--white);margin-bottom:1.3rem}
+.hero-title{font-family:'Cormorant Garamond',serif;font-size:3.5rem;font-weight:300;line-height:1.1;color:var(--white);margin-bottom:1.3rem}
 .hero-title em{font-style:italic;color:rgba(255,255,255,0.55)}
 .hero-sub{font-size:0.98rem;letter-spacing:0.02em;line-height:1.85;color:rgba(255,255,255,0.8);max-width:460px;margin-bottom:2.5rem}
 .btn-outline{display:inline-block;padding:0.85rem 2.4rem;border:1px solid rgba(255,255,255,0.35);font-size:0.58rem;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.85);text-decoration:none;transition:all 0.4s;background:transparent}
@@ -270,16 +334,15 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content
 .stat-label{font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-top:0.4rem;display:block}
 
 .philosophy{padding:7rem 3.5rem;background:var(--cream)}
-.phil-head{max-width:760px;margin-bottom:3.5rem}
+.phil-head{max-width:840px;margin:0 auto 2.2rem;text-align:center}
 .phil-head .section-title em{font-style:italic;color:var(--accent)}
-.phil-body{display:grid;grid-template-columns:1.15fr 0.85fr;gap:4.5rem;align-items:center}
+.phil-lead{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:2.1rem;line-height:1.4;color:var(--charcoal);text-align:center;max-width:780px;margin:0 auto 2.2rem}
+.phil-text{max-width:720px;margin:0 auto}
 .phil-text p{font-size:1.06rem;line-height:1.95;color:var(--text);margin-bottom:1.4rem}
 .phil-text p strong{color:var(--charcoal);font-weight:400}
-.phil-lead{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:2rem;line-height:1.4;color:var(--charcoal);margin-bottom:1.8rem}
-.phil-media{display:flex;flex-direction:column;gap:1.4rem}
-.phil-media img{width:100%;object-fit:cover;filter:grayscale(15%);display:block;background:var(--bone)}
-.phil-media img:first-child{aspect-ratio:4/5;max-height:620px}
-.phil-media img:last-child{aspect-ratio:1/1;width:78%;align-self:flex-end}
+.phil-media{display:grid;grid-template-columns:repeat(3,1fr);gap:1.3rem;margin-top:3.8rem;align-items:start}
+.phil-media img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:var(--bone);filter:grayscale(12%)}
+.phil-media img:nth-child(2){transform:translateY(2.2rem)}
 .phil-quote{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:2.2rem;font-weight:300;line-height:1.42;color:var(--charcoal);text-align:center;max-width:900px;margin:5rem auto 0}
 .phil-quote::before{content:'';display:block;width:42px;height:1px;background:var(--accent);margin:0 auto 2rem}
 .phil-mission{max-width:680px;margin:2.8rem auto 0;text-align:center}
@@ -294,10 +357,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content
 .step-num{font-family:'Cormorant Garamond',serif;font-size:3.5rem;font-weight:300;color:rgba(184,154,106,0.2);line-height:1;display:block;margin-bottom:1rem}
 .step-title{font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-weight:400;margin-bottom:0.75rem}
 .step-body{font-size:0.92rem;line-height:1.8;color:var(--text)}
+.step-img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;margin-bottom:1.4rem;background:var(--bone);filter:grayscale(10%)}
+.step-list{list-style:none;margin-top:0.7rem;display:flex;flex-direction:column;gap:0.4rem}
+.step-list li{font-size:0.9rem;color:var(--text);display:flex;gap:0.55rem;line-height:1.5}
+.step-list li::before{content:'—';color:var(--accent)}
 .process-result{margin-top:4rem;border-top:1px solid rgba(184,154,106,0.25);padding-top:2.8rem}
-.result-items{display:grid;grid-template-columns:repeat(3,1fr);gap:2.5rem;margin-top:1.4rem}
+.result-items{display:grid;grid-template-columns:repeat(4,1fr);gap:2.5rem;margin-top:1.4rem}
 .result-item{display:flex;flex-direction:column;gap:0.7rem}
-.result-num{font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:300;color:var(--accent);line-height:1}
+.result-num{font-family:'Cormorant Garamond',serif;font-size:2.1rem;font-weight:300;color:var(--accent);line-height:1}
 .result-text{font-size:0.92rem;line-height:1.7;color:var(--text)}
 
 .prices{padding:7rem 3.5rem;background:var(--cream)}
@@ -368,13 +435,11 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
   .cat-square-label{font-size:2rem}
   .about{flex-direction:column;gap:2.5rem}
   .about-img{flex:none;width:100%;height:380px}
-  .phil-head{margin-bottom:2.5rem}
-  .phil-body{grid-template-columns:1fr;gap:2.5rem}
-  .phil-media{flex-direction:row;gap:1rem}
-  .phil-media img:first-child{max-height:none}
-  .phil-media img:last-child{width:100%;align-self:auto}
+  .phil-head{margin-bottom:2rem}
+  .phil-media{gap:1rem;margin-top:2.8rem}
   .phil-quote{font-size:1.8rem;margin-top:3rem}
   .process-grid{grid-template-columns:1fr 1fr}
+  .result-items{grid-template-columns:repeat(2,1fr)}
   .price-grid{grid-template-columns:1fr 1fr}
   .contact{grid-template-columns:1fr;gap:2.5rem}
   .contact-cta{height:auto}
@@ -395,8 +460,9 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
   .photo-grid{columns:1}
   .price-grid{grid-template-columns:1fr}
   .phil-lead{font-size:1.7rem}
-  .phil-media{flex-direction:column}
-  .phil-media img:last-child{width:80%;align-self:flex-end}
+  .phil-media{grid-template-columns:1fr;gap:1rem}
+  .phil-media img{aspect-ratio:4/5}
+  .phil-media img:nth-child(2){transform:none}
   .phil-quote{font-size:1.55rem}
   .process-grid{grid-template-columns:1fr}
   .process-step{border-right:none;border-bottom:1px solid rgba(184,154,106,0.25);padding:2rem 0}
@@ -428,9 +494,9 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
   <div class="hero-img-main"></div>
   <div class="hero-overlay"></div>
   <div class="hero-content">
-    <span class="hero-label">Директор &amp; Фотограф</span>
-    <h1 class="hero-title">Фотографія —<br>мій <em>психологічний</em><br>інструмент</h1>
-    <p class="hero-sub">Інструмент по роботі з людьми. Сімейна, індивідуальна, репортажна та весільна зйомка, яка повертає впевненість у собі.</p>
+    <span class="hero-label">Фотограф Катя Острогляд</span>
+    <h1 class="hero-title">Фотографія — мій<br>психологічний<br>інструмент по роботі<br>з <em>людьми</em></h1>
+    <p class="hero-sub">Моя місія — допомогти вам віднайти впевненість у собі через портретні та індивідуальні фотосесії. Я зупиняю час крізь чуттєві лав сторі та теплі сімейні кадри, а також ловлю справжнє життя у щирих та ефектних репортажах.</p>
     <a class="btn-outline" href="#gallery">Переглянути роботи</a>
   </div>
 </section>
@@ -438,8 +504,7 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
 <section class="gallery" id="gallery">
   <div class="gallery-header">
     <div>
-      <span class="section-label">Вибрані роботи</span>
-      <h2 class="section-title">Портфоліо</h2>
+      <h2 class="section-title">PORTFOLIO</h2>
     </div>
     <a class="link-accent" href="https://www.instagram.com/ostrohliad.k" target="_blank">Instagram &rarr;</a>
   </div>
@@ -469,17 +534,16 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
     <span class="section-label" style="color:var(--accent)">Моя філософія</span>
     <h2 class="section-title">Фотографія — мій<br>психологічний <em>інструмент</em></h2>
   </div>
-  <div class="phil-body">
-    <div class="phil-text">
-      <p class="phil-lead">Мало хто знає, але врятувала мене саме фотографія.</p>
-      <p>Колись моя невпевненість у собі сягала нереальних вершин. Я постійно сумнівалася — чи правильно сказала, чи правильно вчинила, як виглядаю збоку. У мене був безкінечний перелік внутрішніх станів, які заважали просто <strong>жити</strong>.</p>
-      <p>На зйомках я ніби грала роль кращої версії себе — тієї, якою хочу бути, але не наважуюся. А потім, дозволяючи собі все більше зйомок і образів, я почала переносити це відчуття у своє реальне життя: <strong>красива, варта, впевнена</strong>.</p>
-      <p>Після кожної фотосесії, коли я бачила на фото ту Я, якою хочу бути завжди, — зі мною ставалися справжні зміни. Я почала обирати себе там, де раніше підлаштовувалася. Спорт, медитації, турбота про себе прийшли в моє життя завдяки відчуттю, що я — головна героїня власної історії.</p>
-    </div>
-    <div class="phil-media">
-      <img src="__PHIL1__" alt="" loading="lazy">
-      <img src="__PHIL2__" alt="" loading="lazy">
-    </div>
+  <p class="phil-lead">Мало хто знає, але врятувала мене саме фотографія.</p>
+  <div class="phil-text">
+    <p>Колись моя невпевненість у собі сягала нереальних вершин. Я постійно сумнівалася — чи правильно сказала, чи правильно вчинила, як виглядаю збоку. У мене був безкінечний перелік внутрішніх станів, які заважали просто <strong>жити</strong>.</p>
+    <p>На зйомках я ніби грала роль кращої версії себе — тієї, якою хочу бути, але не наважуюся. А потім, дозволяючи собі все більше зйомок і образів, я почала переносити це відчуття у своє реальне життя: <strong>красива, варта, впевнена</strong>.</p>
+    <p>Після кожної фотосесії, коли я бачила на фото ту Я, якою хочу бути завжди, — зі мною ставалися справжні зміни. Я почала обирати себе там, де раніше підлаштовувалася. Спорт, медитації, турбота про себе прийшли в моє життя завдяки відчуттю, що я — головна героїня власної історії.</p>
+  </div>
+  <div class="phil-media">
+    <img src="__PHIL1__" alt="" loading="lazy">
+    <img src="__PHIL2__" alt="" loading="lazy">
+    <img src="__PHIL3__" alt="" loading="lazy">
   </div>
   <blockquote class="phil-quote">«Я головна героїня власного життя —<br>прямо по центру кадру»</blockquote>
   <div class="phil-mission">
@@ -490,20 +554,20 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
 <section class="process fade-up" id="process">
   <span class="section-label">Як це відбувається</span>
   <h2 class="section-title">Як проходить підготовка<br>і фотосесія</h2>
-  <p class="process-intro">Якщо ви тільки готуєтеся до зйомки — це нормально трохи хвилюватися. Я веду вас крок за кроком, щоб процес був легким і приємним, навіть якщо ви вперше перед камерою.</p>
   <div class="process-grid">
-    <div class="process-step"><span class="step-num">01</span><h4 class="step-title">Обираємо стиль</h4><p class="step-body">Ви описуєте або надсилаєте референси бажаної зйомки — або я показую приклади: мінімалізм, чуттєва, художня, портретна.</p></div>
-    <div class="process-step"><span class="step-num">02</span><h4 class="step-title">Студія або локація</h4><p class="step-body">Допомагаю підібрати й забронювати простір. Оренда студії (~700–1100 грн/год) оплачується окремо від моїх послуг.</p></div>
-    <div class="process-step"><span class="step-num">03</span><h4 class="step-title">Складаємо образ</h4><p class="step-body">Разом добираємо гардероб і деталі. За годину зазвичай встигаємо змінити 2–3 образи, іноді більше.</p></div>
-    <div class="process-step"><span class="step-num">04</span><h4 class="step-title">Макіяж</h4><p class="step-body">За потреби рекомендую перевірених мною візажистів — зі знижкою −10% для моїх клієнтів.</p></div>
-    <div class="process-step"><span class="step-num">05</span><h4 class="step-title">Організація</h4><p class="step-body">Підбираю референси, підкажу, де орендувати одяг, і допомагаю спланувати всю логістику зйомки.</p></div>
+    <div class="process-step"><span class="step-num">01</span><h4 class="step-title">Обираємо стиль фотосесії</h4><ul class="step-list"><li>портретна</li><li>мінімалізм</li><li>сексуальна</li><li>чуттєва</li><li>ефектна</li></ul></div>
+    <div class="process-step"><span class="step-num">02</span><h4 class="step-title">Студія або локація</h4><p class="step-body">Допомагаю підібрати й забронювати фотостудію. Оренда студії (від 1200 грн/год) оплачується окремо.</p></div>
+    <div class="process-step"><span class="step-num">03</span><h4 class="step-title">Складаємо образ</h4><p class="step-body">Не соромся попросити мене глянути на гардероб — я допоможу зібрати образи. За зйомку встигаємо 2–3 образи.</p></div>
+    <div class="process-step"><span class="step-num">04</span><h4 class="step-title">Макіяж і стиль</h4><p class="step-body">Рекомендую перевірених мною візажистів та стилістів — зі знижкою −10%.</p></div>
+    <div class="process-step"><span class="step-num">05</span><h4 class="step-title">Організація</h4><p class="step-body">Підбираю референси, за потреби підкажу, де орендувати одяг, на який час призначити макіяж і зачіску та як спланувати логістику.</p></div>
   </div>
   <div class="process-result">
-    <span class="section-label">Що ви отримаєте</span>
+    <span class="section-label">Що ти отримаєш</span>
     <div class="result-items">
-      <div class="result-item"><span class="result-num">100+</span><span class="result-text">оброблених фото в ретуші<br>через 3–5 днів після зйомки</span></div>
-      <div class="result-item"><span class="result-num">30–60 сек</span><span class="result-text">бекстейдж-відео<br>з вашої фотосесії</span></div>
-      <div class="result-item"><span class="result-num">і головне</span><span class="result-text">приємно проведений час<br>для себе — те, що не описати словами</span></div>
+      <div class="result-item"><span class="result-num">100+</span><span class="result-text">готових фото в кольоровій корекції та базовій ретуші</span></div>
+      <div class="result-item"><span class="result-num">RAW</span><span class="result-text">усі чорнові фото за потреби віддаю</span></div>
+      <div class="result-item"><span class="result-num">комфорт</span><span class="result-text">під час фотосесії допомагаю розслабитись та налаштуватись</span></div>
+      <div class="result-item"><span class="result-num">30+</span><span class="result-text">позувань в арсеналі — повністю супроводжую на зйомці й показую, як їх повторити</span></div>
     </div>
   </div>
 </section>
@@ -524,7 +588,7 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
         <li>Рекомендовано орендувати студію від 2 годин</li>
         <li>Передача оброблених фото у JPEG та RAW</li>
       </ul>
-      <p class="price-card-note">Окремо оплачується: оренда студії (~700–1100 грн/год), мейкап, додаткове обладнання за потреби та одяг для образів. Допомагаю з бронюванням та організацією.</p>
+      <p class="price-card-note">Окремо оплачується: оренда студії (від 1200 грн/год), мейкап, додаткове обладнання за потреби та одяг для образів. Допомагаю з бронюванням та організацією.</p>
       <a class="price-btn" href="#contact">Замовити</a>
     </div>
     <div class="price-card highlight">
@@ -539,7 +603,7 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
         <li>Рекомендовано орендувати студію від 2 годин</li>
         <li>Передача оброблених фото у JPEG та RAW</li>
       </ul>
-      <p class="price-card-note">Окремо оплачується: оренда студії (~700–1100 грн/год), мейкап, додаткове обладнання за потреби та одяг для образів. Допомагаю з бронюванням та організацією.</p>
+      <p class="price-card-note">Окремо оплачується: оренда студії (від 1200 грн/год), мейкап, додаткове обладнання за потреби та одяг для образів. Допомагаю з бронюванням та організацією.</p>
       <a class="price-btn" href="#contact">Замовити</a>
     </div>
     <div class="price-card">
@@ -614,7 +678,7 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
 
 <script>
 const CATEGORIES = __CATS_JSON__;
-const CAT_ORDER = ["family","individual","reportage","wedding"];
+const CAT_ORDER = ["individual","family","reportage","wedding"];
 const CONTACT_EMAIL = "__EMAIL__";
 const INSTAGRAM_USER = "__INSTAGRAM__";
 
@@ -929,8 +993,12 @@ def main():
     hero_full = optimize(HERO_IMAGE)[1] if os.path.exists(HERO_IMAGE) else HERO_IMAGE
     about_full = optimize(ABOUT_IMAGE)[1] if os.path.exists(ABOUT_IMAGE) else ABOUT_IMAGE
 
-    phil1 = pick_cover(data, "individual", about_full)
-    phil2 = pick_cover(data, "family", hero_full)
+    # Фото для розділу «Філософія» (з папки Philosophy), із запасним варіантом
+    def opt_or(path, fallback):
+        return optimize(path)[1] if path and os.path.exists(path) else fallback
+    phil1 = opt_or(PHIL_PHOTOS[0] if len(PHIL_PHOTOS) > 0 else "", about_full)
+    phil2 = opt_or(PHIL_PHOTOS[1] if len(PHIL_PHOTOS) > 1 else "", hero_full)
+    phil3 = opt_or(PHIL_PHOTOS[2] if len(PHIL_PHOTOS) > 2 else "", about_full)
 
     html = (TEMPLATE
             .replace("__CATS_JSON__", cats_js)
@@ -938,6 +1006,7 @@ def main():
             .replace("__ABOUT__", about_full)
             .replace("__PHIL1__", phil1)
             .replace("__PHIL2__", phil2)
+            .replace("__PHIL3__", phil3)
             .replace("__DEPOSIT__", str(BOOKING_DEPOSIT))
             .replace("__EMAIL__", CONTACT_EMAIL)
             .replace("__INSTAGRAM__", INSTAGRAM_USER))
