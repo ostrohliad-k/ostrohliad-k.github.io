@@ -20,6 +20,7 @@ HERO_IMAGE    = "photos/Heros/Image.jpg"   # головна картинка
 ABOUT_IMAGE   = "photos/Heros/About.jpg"   # фото в розділі "Про мене" (додайте About.jpg у photos/Heros/)
 
 SITE_URL = "https://ostrohliad.photo"      # адреса сайту (для прев'ю при поширенні / SEO)
+CF_ANALYTICS_TOKEN = ""                     # токен Cloudflare Web Analytics (beacon). Порожньо — аналітика вимкнена.
 CONTACT_EMAIL = "kateryna.ostrohlyd@icloud.com"   # пошта, на яку приходять заявки
 INSTAGRAM_USER = "ostrohliad.k"            # нік в Instagram (для прямого повідомлення в Direct)
 
@@ -600,11 +601,11 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
     </div>
     <div class="phil-media">
       <div class="phil-col">
-        <img src="__PHIL1__" alt="" loading="lazy">
-        <img src="__PHIL3__" alt="" loading="lazy">
+        <img src="__PHIL1__" alt="Катя Острогляд — фотограф, авторська зйомка" loading="lazy">
+        <img src="__PHIL3__" alt="Катя Острогляд — фотограф, авторська зйомка" loading="lazy">
       </div>
       <div class="phil-col phil-col-offset">
-        <img src="__PHIL2__" alt="" loading="lazy">
+        <img src="__PHIL2__" alt="Катя Острогляд — фотограф, авторська зйомка" loading="lazy">
       </div>
     </div>
   </div>
@@ -808,7 +809,7 @@ function showShoots(key){
   if(!c.shoots.length){ body.innerHTML = '<p class="cat-empty">Зйомки ще не додані</p>'; return; }
   body.innerHTML = '<div class="shoot-grid">' + c.shoots.map((s,i)=>
     `<div class="shoot-card" onclick="showPhotos('${key}',${i})">
-      <div class="shoot-card-imgwrap"><img class="shoot-card-img" src="${s.photos[0]}" alt="" loading="lazy" onload="this.classList.add('ld')"></div>
+      <div class="shoot-card-imgwrap"><img class="shoot-card-img" src="${s.photos[0]}" alt="${s.title} — ${c.label} | Катя Острогляд, фотограф" loading="lazy" onload="this.classList.add('ld')"></div>
       <span class="shoot-card-title">${s.title}</span>
       <span class="shoot-card-meta">${s.date ? s.date+' · ' : ''}${s.photos.length} фото</span>
     </div>`
@@ -823,7 +824,7 @@ function showPhotos(key, idx){
     + `<span class="crumb-sep">/</span><span class="crumb-current">${s.title}</span>`;
   lbPhotos = s.photos;
   body.innerHTML = '<div class="photo-grid">' + s.photos.map((p,i)=>
-    `<div class="photo-item" onclick="openLb(${i})"><img src="${p}" alt="" loading="lazy" onload="this.classList.add('ld')"></div>`
+    `<div class="photo-item" onclick="openLb(${i})"><img src="${p}" alt="${s.title} — ${c.label}, фото ${i+1} | Катя Острогляд" loading="lazy" onload="this.classList.add('ld')"></div>`
   ).join('') + '</div>';
   document.getElementById('gallery').scrollIntoView({behavior:'smooth'});
 }
@@ -917,6 +918,7 @@ window.addEventListener('scroll', ()=>{
 /* старт */
 showCats();
 </script>
+__ANALYTICS__
 </body>
 </html>"""
 
@@ -1162,6 +1164,9 @@ def main():
         print("  [!] OG-зображення:", e)
     og_image = SITE_URL.rstrip("/") + "/og-image.jpg"   # абсолютний URL прев'ю
 
+    analytics = ('<script defer src="https://static.cloudflareinsights.com/beacon.min.js" '
+                 'data-cf-beacon=\'{"token": "%s"}\'></script>' % CF_ANALYTICS_TOKEN) if CF_ANALYTICS_TOKEN else ""
+
     html = (TEMPLATE
             .replace("__CATS_JSON__", cats_js)
             .replace("__HERO__", hero_full)
@@ -1172,6 +1177,7 @@ def main():
             .replace("__CALLBACK_API__", CALLBACK_API_URL)
             .replace("__SITEURL__", SITE_URL.rstrip("/"))
             .replace("__OGIMAGE__", og_image)
+            .replace("__ANALYTICS__", analytics)
             .replace("__EMAIL__", CONTACT_EMAIL)
             .replace("__INSTAGRAM__", INSTAGRAM_USER))
 

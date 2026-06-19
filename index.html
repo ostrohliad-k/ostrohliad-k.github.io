@@ -333,11 +333,11 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
     </div>
     <div class="phil-media">
       <div class="phil-col">
-        <img src="web/full/Philosophy/IMG_6878.webp" alt="" loading="lazy">
-        <img src="web/full/Philosophy/IMG_8714.webp" alt="" loading="lazy">
+        <img src="web/full/Philosophy/IMG_6878.webp" alt="Катя Острогляд — фотограф, авторська зйомка" loading="lazy">
+        <img src="web/full/Philosophy/IMG_8714.webp" alt="Катя Острогляд — фотограф, авторська зйомка" loading="lazy">
       </div>
       <div class="phil-col phil-col-offset">
-        <img src="web/full/Philosophy/IMG_6932.webp" alt="" loading="lazy">
+        <img src="web/full/Philosophy/IMG_6932.webp" alt="Катя Острогляд — фотограф, авторська зйомка" loading="lazy">
       </div>
     </div>
   </div>
@@ -541,7 +541,7 @@ function showShoots(key){
   if(!c.shoots.length){ body.innerHTML = '<p class="cat-empty">Зйомки ще не додані</p>'; return; }
   body.innerHTML = '<div class="shoot-grid">' + c.shoots.map((s,i)=>
     `<div class="shoot-card" onclick="showPhotos('${key}',${i})">
-      <div class="shoot-card-imgwrap"><img class="shoot-card-img" src="${s.photos[0]}" alt="" loading="lazy" onload="this.classList.add('ld')"></div>
+      <div class="shoot-card-imgwrap"><img class="shoot-card-img" src="${s.photos[0]}" alt="${s.title} — ${c.label} | Катя Острогляд, фотограф" loading="lazy" onload="this.classList.add('ld')"></div>
       <span class="shoot-card-title">${s.title}</span>
       <span class="shoot-card-meta">${s.date ? s.date+' · ' : ''}${s.photos.length} фото</span>
     </div>`
@@ -556,7 +556,7 @@ function showPhotos(key, idx){
     + `<span class="crumb-sep">/</span><span class="crumb-current">${s.title}</span>`;
   lbPhotos = s.photos;
   body.innerHTML = '<div class="photo-grid">' + s.photos.map((p,i)=>
-    `<div class="photo-item" onclick="openLb(${i})"><img src="${p}" alt="" loading="lazy" onload="this.classList.add('ld')"></div>`
+    `<div class="photo-item" onclick="openLb(${i})"><img src="${p}" alt="${s.title} — ${c.label}, фото ${i+1} | Катя Острогляд" loading="lazy" onload="this.classList.add('ld')"></div>`
   ).join('') + '</div>';
   document.getElementById('gallery').scrollIntoView({behavior:'smooth'});
 }
@@ -650,5 +650,6 @@ window.addEventListener('scroll', ()=>{
 /* старт */
 showCats();
 </script>
+
 </body>
 </html>
