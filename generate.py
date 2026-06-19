@@ -41,7 +41,7 @@ BOOKING_STEP_MIN = 60                      # крок, хвилин
 # Категорії: folder — назва підпапки, label — назва на сайті. Порядок = порядок на сайті.
 CATEGORIES = {
     "individual": {"folder": "Individual", "label": "Індивідуальні та портретні зйомки"},
-    "family":     {"folder": "Family",     "label": "Love story"},
+    "family":     {"folder": "Family",     "label": "Love story & Сімейні зйомки"},
     "reportage":  {"folder": "Reportage",  "label": "Репортажні зйомки"},
     "wedding":    {"folder": "Wedding",    "label": "Весілля"},
 }
@@ -49,22 +49,38 @@ CATEGORIES = {
 # Обкладинка категорії (квадрат у портфоліо). Вкажіть шлях до фото-оригіналу
 # в папці photos/. Якщо порожньо — береться перше фото першої зйомки.
 CATEGORY_COVERS = {
-    "individual": "photos/Individual/Anna/photo-243.JPG",
-    "family":     "photos/Family/2026-04-28_Family_shoot/2026-04-28_3885309812192130891.jpg",
+    "individual": "photos/Individual/Anna's sensual photoshoot/photo-243.JPG",
+    "family":     "",
     "reportage":  "photos/Reportage/HB Mari/photo-514.JPG",
     "wedding":    "",
 }
 
-# Перенесення окремих зйомок між категоріями (назва папки -> ключ категорії)
-MOVE_SHOOTS = {
-    "2020-09-01_Love_stories_in_shoots": "family",
-    "ALINA RETRO":                       "family",
-    "2026-02-19_Shoot_with_Musya":       "family",
+# Зйомки (папки), які НЕ показувати на сайті (оригінали лишаються на диску)
+EXCLUDE_SHOOTS = {
+    "2026-04-28_Family_shoot",
+    "ALINA RETRO",
+    "2026-02-19_Shoot_with_Musya",
 }
 
-# Фото для розділу «Моя філософія» (2 шт.) та для кроку 1 «Процес»
+# Перенесення окремих зйомок між категоріями (назва папки -> ключ категорії)
+MOVE_SHOOTS = {}
+
+# Обкладинка КОНКРЕТНОЇ зйомки: вказане фото стає першим (назва папки -> файл)
+SHOOT_COVERS = {
+    "2022-11-14_Photos_for_friends": "2022-11-14_2971450573309007269.jpg",
+}
+
+# Порядок зйомок у категорії: перелічені папки йдуть першими (категорія -> [папки])
+SHOOT_ORDER = {
+    "family": ["F2 FEDORCHUK"],
+}
+
+# Фото для розділу «Моя філософія» (3 шт.)
 PHIL_PHOTOS = ["photos/Philosophy/IMG_6878.JPG", "photos/Philosophy/IMG_6932.JPG", "photos/Philosophy/IMG_8714.JPG"]
-STYLE_PHOTO = "photos/Style/IMG_8448.JPG"
+
+# Бекенд замовлення зворотного дзвінка (Cloudflare Worker -> Telegram).
+# Поки порожньо — форма відкриває Instagram Direct із даними у буфері обміну.
+CALLBACK_API_URL = ""
 # ══════════════════════════════════════════════════════════════════
 
 EXTS = {".jpg", ".jpeg", ".png", ".webp"}
@@ -184,7 +200,7 @@ def scan_category(folder_name):
 
     # підпапки = окремі зйомки
     for shoot_name in sorted(os.listdir(base)):
-        if shoot_name.startswith("."):
+        if shoot_name.startswith(".") or shoot_name in EXCLUDE_SHOOTS:
             continue
         shoot_path = os.path.join(base, shoot_name)
         if not os.path.isdir(shoot_path):
@@ -192,6 +208,11 @@ def scan_category(folder_name):
         photos = photos_in(shoot_path)
         if not photos:
             continue
+        # за потреби ставимо обрану обкладинку зйомки першою
+        cover_file = SHOOT_COVERS.get(shoot_name)
+        if cover_file:
+            want = (base + "/" + shoot_name + "/" + cover_file).replace("\\", "/")
+            photos.sort(key=lambda p: 0 if p == want else 1)
         title, date = parse_shoot_name(shoot_name)
         shoots.append({"title": title, "date": date, "folder": shoot_name,
                        "photos": optimize_list(photos)})
@@ -219,6 +240,13 @@ def build_data():
                     data[key]["shoots"].remove(s)
                     data[target]["shoots"].append(s)
                     print(f"  → перенесено '{folder_name}' у категорію '{target}'")
+
+    # порядок зйомок: вказані папки йдуть першими
+    for key, order in SHOOT_ORDER.items():
+        if key not in data:
+            continue
+        rank = {name: i for i, name in enumerate(order)}
+        data[key]["shoots"].sort(key=lambda s: rank.get(s.get("folder"), len(order)))
 
     # обкладинки + підрахунок
     total = 0
@@ -369,10 +397,12 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content
 .result-text{font-size:0.92rem;line-height:1.7;color:var(--text)}
 
 .prices{padding:7rem 3.5rem;background:var(--cream)}
-.price-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-top:3.5rem}
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3.5rem}
+.price-grid-3{margin-top:1.8rem}
+.price-sub{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:var(--charcoal);margin:4rem 0 0}
 .price-card{background:var(--white);border:1px solid rgba(184,154,106,0.18);padding:2.5rem 2rem;display:flex;flex-direction:column}
 .price-card.highlight{background:var(--charcoal)}
-.price-card-cat{font-size:0.5rem;letter-spacing:0.32em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:0.6rem}
+.price-card-cat{font-size:0.6rem;letter-spacing:0.28em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:0.6rem}
 .price-card-name{font-family:'Cormorant Garamond',serif;font-size:1.45rem;font-weight:300;color:var(--charcoal);margin-bottom:1.5rem;line-height:1.2}
 .price-card.highlight .price-card-name{color:var(--white)}
 .price-divider{width:32px;height:1px;background:rgba(184,154,106,0.4);margin-bottom:1.5rem}
@@ -408,6 +438,16 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content
 .cta-btn-secondary{background:transparent;color:var(--charcoal)}
 .cta-btn-secondary:hover{background:var(--charcoal);color:var(--white)}
 .cta-note{font-size:0.82rem;line-height:1.7;color:var(--warm-gray);margin-top:1.4rem;max-width:420px}
+.contact-cta .cta-btn{max-width:420px}
+.contact-cta>.cta-btn-primary{margin-bottom:1.4rem}
+.callback-form{max-width:420px}
+.cb-row{display:grid;grid-template-columns:1fr 1fr;gap:0.9rem;margin-bottom:1.1rem}
+.callback-form input{width:100%;padding:0.85rem 0;background:transparent;border:none;border-bottom:1px solid rgba(135,127,116,0.35);font-family:'Montserrat',sans-serif;font-size:0.95rem;color:var(--text);outline:none;transition:border-color 0.3s}
+.callback-form input:focus{border-bottom-color:var(--accent)}
+.callback-form input::placeholder{color:var(--warm-gray)}
+.callback-form .cta-btn{width:100%}
+.cb-msg{font-size:0.85rem;line-height:1.6;margin-top:0.9rem}
+.cb-msg.ok{color:#5b7a52}.cb-msg.err{color:#a85b4f}
 
 footer{padding:2rem 3.5rem;background:var(--charcoal);display:flex;justify-content:space-between;align-items:center}
 .footer-logo{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:300;letter-spacing:0.18em;color:rgba(255,255,255,0.55);text-decoration:none;text-transform:lowercase}
@@ -422,7 +462,7 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
 @media(max-width:1100px){.price-grid{grid-template-columns:repeat(2,1fr)}.process-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:960px){
   nav{padding:1rem 1.5rem}
-  .nav-links{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--cream);flex-direction:column;align-items:center;justify-content:center;gap:2rem;z-index:99}
+  .nav-links{display:none;position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;background:var(--cream);flex-direction:column;align-items:center;justify-content:center;gap:2rem;z-index:99}
   .nav-links.open{display:flex}
   .nav-links a{font-size:1.1rem;letter-spacing:0.14em}
   .burger{display:flex;z-index:101}
@@ -470,6 +510,8 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
   .result-items{grid-template-columns:1fr;gap:1.6rem}
   .contact-tagline{font-size:2.3rem}
   .cta-btn{padding:1.1rem 1.2rem;font-size:0.74rem}
+  .cb-row{grid-template-columns:1fr;gap:0}
+  .cb-row input{margin-bottom:0.4rem}
   .lb-prev,.lb-next{font-size:2rem;padding:1rem}
   .lb-close{font-size:1.7rem;top:1rem;right:1.2rem}
 }
@@ -596,7 +638,7 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
       <span class="price-card-cat">03</span>
       <h3 class="price-card-name">Репортажні<br>зйомки</h3>
       <div class="price-divider"></div>
-      <span class="price-amount">$200<span class="price-unit"> / год</span></span>
+      <span class="price-amount">$150<span class="price-unit"> / год</span></span>
       <span class="price-from">Від 4 годин роботи</span>
       <ul class="price-list">
         <li>Погодинна оплата</li>
@@ -606,18 +648,43 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
       </ul>
       <a class="price-btn" href="#contact">Замовити</a>
     </div>
+  </div>
+
+  <h3 class="price-sub">Весільні пакети</h3>
+  <div class="price-grid price-grid-3">
     <div class="price-card">
-      <span class="price-card-cat">04</span>
-      <h3 class="price-card-name">Весільна<br>зйомка</h3>
+      <span class="price-card-cat">Mini Wedding</span>
+      <h3 class="price-card-name">Mini</h3>
       <div class="price-divider"></div>
-      <span class="price-amount">$200<span class="price-unit"> / год</span></span>
-      <span class="price-from">Повний день або окремі моменти</span>
+      <span class="price-amount">$400</span>
+      <span class="price-from">Зйомка до 3 годин</span>
       <ul class="price-list">
-        <li>Погодинна оплата</li>
-        <li>Повний день весілля</li>
-        <li>Або окремі моменти: ранок нареченої, церемонія</li>
-        <li>Весільні фото у місті чи на природі</li>
-        <li>Передача оброблених фото у JPEG та RAW</li>
+        <li>Понад 150 оброблених фото</li>
+        <li>Готовність матеріалу — до 1 місяця</li>
+      </ul>
+      <a class="price-btn" href="#contact">Замовити</a>
+    </div>
+    <div class="price-card">
+      <span class="price-card-cat">Classic Wedding</span>
+      <h3 class="price-card-name">Classic</h3>
+      <div class="price-divider"></div>
+      <span class="price-amount">$700</span>
+      <span class="price-from">Зйомка до 6 годин</span>
+      <ul class="price-list">
+        <li>Понад 350 оброблених фото</li>
+        <li>Готовність матеріалу — до 1 місяця</li>
+      </ul>
+      <a class="price-btn" href="#contact">Замовити</a>
+    </div>
+    <div class="price-card highlight">
+      <span class="price-card-cat">Premium Wedding Experience</span>
+      <h3 class="price-card-name" style="color:var(--white)">Premium</h3>
+      <div class="price-divider"></div>
+      <span class="price-amount">$800</span>
+      <span class="price-from">Зйомка до 10 годин</span>
+      <ul class="price-list">
+        <li>Понад 1000 оброблених фото</li>
+        <li>Готовність матеріалу — до 2 місяців</li>
       </ul>
       <a class="price-btn" href="#contact">Замовити</a>
     </div>
@@ -636,12 +703,16 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
     </div>
   </div>
   <div class="contact-right contact-cta">
-    <p class="contact-cta-text">Напишіть мені в Instagram Direct — обговоримо вашу ідею. Або одразу оберіть зручну дату й час у календарі бронювання.</p>
-    <div class="cta-buttons">
-      <a class="cta-btn cta-btn-primary" href="https://ig.me/m/__INSTAGRAM__" target="_blank" rel="noopener">Написати в Direct</a>
-      <a class="cta-btn cta-btn-secondary" href="booking.html">Забронювати дату</a>
-    </div>
-    <p class="cta-note">Бронювання дати — передоплата від __DEPOSIT__ грн, яка зараховується у вартість зйомки.</p>
+    <p class="contact-cta-text">Напишіть мені в Instagram Direct — обговоримо вашу ідею. Або залиште номер, і я передзвоню вам сама.</p>
+    <a class="cta-btn cta-btn-primary" href="https://ig.me/m/__INSTAGRAM__" target="_blank" rel="noopener">Написати в Direct</a>
+    <form class="callback-form" id="callback-form">
+      <div class="cb-row">
+        <input type="text" name="name" placeholder="Ваше ім'я" autocomplete="name" required>
+        <input type="tel" name="phone" placeholder="+380 __ ___ __ __" autocomplete="tel" required>
+      </div>
+      <button class="cta-btn cta-btn-secondary" type="submit">Замовити дзвінок</button>
+      <p class="cb-msg" id="cb-msg"></p>
+    </form>
   </div>
 </section>
 
@@ -667,6 +738,7 @@ const CATEGORIES = __CATS_JSON__;
 const CAT_ORDER = ["individual","family","reportage","wedding"];
 const CONTACT_EMAIL = "__EMAIL__";
 const INSTAGRAM_USER = "__INSTAGRAM__";
+const CALLBACK_API = "__CALLBACK_API__";
 
 const body  = document.getElementById('gallery-body');
 const crumb = document.getElementById('gallery-crumb');
@@ -681,7 +753,8 @@ function showCats(){
   body.innerHTML = '<div class="cat-squares">' + CAT_ORDER.map(key=>{
     const c = CATEGORIES[key];
     const cover = c.cover || (c.shoots[0] && c.shoots[0].photos[0] && c.shoots[0].photos[0].t) || '';
-    return `<div class="cat-square" onclick="showShoots('${key}')" style="background-image:url('${cover}')">
+    const coverCss = encodeURI(cover).replace(/'/g, '%27');  // апострофи/пробіли в шляху не ламають url()
+    return `<div class="cat-square" onclick="showShoots('${key}')" style="background-image:url('${coverCss}')">
       <div class="cat-square-inner">
         <span class="cat-square-label">${c.label}</span>
         <span class="cat-square-count">${c.shoots.length} зйомок · ${catCount(c)} фото</span>
@@ -743,6 +816,44 @@ document.addEventListener('keydown', e=>{
 /* — меню — */
 function toggleMenu(){ document.getElementById('nav-links').classList.toggle('open'); }
 function closeMenu(){ document.getElementById('nav-links').classList.remove('open'); }
+
+/* — форма зворотного дзвінка — */
+const cbForm = document.getElementById('callback-form');
+if(cbForm){
+  cbForm.addEventListener('submit', async e=>{
+    e.preventDefault();
+    const msg = document.getElementById('cb-msg');
+    const btn = cbForm.querySelector('button');
+    const fd = new FormData(cbForm);
+    const name = (fd.get('name')||'').toString().trim();
+    const phone = (fd.get('phone')||'').toString().trim();
+    if(!name || !phone){ return; }
+    msg.className='cb-msg';
+
+    // 1) Якщо підключено бекенд (Telegram) — надсилаємо туди
+    if(CALLBACK_API){
+      btn.disabled=true; const o=btn.textContent; btn.textContent='Надсилаємо…';
+      try{
+        const r = await fetch(CALLBACK_API,{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({name, phone})});
+        if(!r.ok) throw new Error('bad');
+        cbForm.innerHTML = '<p class="cb-msg ok">Дякую! Я зателефоную вам найближчим часом.</p>';
+      }catch(err){
+        btn.disabled=false; btn.textContent=o;
+        msg.className='cb-msg err';
+        msg.innerHTML='Не вдалося надіслати. Напишіть, будь ласка, в <a href="https://ig.me/m/'+INSTAGRAM_USER+'" target="_blank" rel="noopener">Direct</a>.';
+      }
+      return;
+    }
+
+    // 2) Запасний варіант: копіюємо дані та відкриваємо Direct
+    const text = 'Передзвоніть мені, будь ласка. Ім\'я: '+name+'. Телефон: '+phone+'.';
+    try{ await navigator.clipboard.writeText(text); }catch(err){}
+    window.open('https://ig.me/m/'+INSTAGRAM_USER,'_blank','noopener');
+    msg.className='cb-msg ok';
+    msg.innerHTML='Відкрили Instagram Direct — дані вже скопійовано, просто вставте їх і надішліть.';
+  });
+}
 
 /* — анімації — */
 const obs = new IntersectionObserver(e=>e.forEach(x=>{ if(x.isIntersecting) x.target.classList.add('visible'); }), {threshold:0.08});
@@ -993,7 +1104,7 @@ def main():
             .replace("__PHIL1__", phil1)
             .replace("__PHIL2__", phil2)
             .replace("__PHIL3__", phil3)
-            .replace("__DEPOSIT__", str(BOOKING_DEPOSIT))
+            .replace("__CALLBACK_API__", CALLBACK_API_URL)
             .replace("__EMAIL__", CONTACT_EMAIL)
             .replace("__INSTAGRAM__", INSTAGRAM_USER))
 
@@ -1001,19 +1112,7 @@ def main():
         f.write(html)
     print(f"\nDone: {OUTPUT_FILE}  ({total} photos total)")
 
-    booking = (BOOKING_TEMPLATE
-               .replace("__DEPOSIT__", str(BOOKING_DEPOSIT))
-               .replace("__BOOKING_API__", BOOKING_API_URL)
-               .replace("__PAYMENT_LINK__", PAYMENT_LINK)
-               .replace("__INSTAGRAM__", INSTAGRAM_USER)
-               .replace("__HOUR_START__", str(BOOKING_HOURS[0]))
-               .replace("__HOUR_END__", str(BOOKING_HOURS[1]))
-               .replace("__STEP__", str(BOOKING_STEP_MIN)))
-
-    with open(BOOKING_OUTPUT, "w", encoding="utf-8") as f:
-        f.write(booking)
-    pay_mode = "Monobank API" if BOOKING_API_URL else ("static link" if PAYMENT_LINK else "Direct fallback")
-    print(f"Done: {BOOKING_OUTPUT}  (оплата: {pay_mode})")
+    # сторінка бронювання/оплати більше не генерується (видалено за бажанням)
 
     print(f"\nWebP: створено {_opt_stats['made']}, пропущено (вже є) {_opt_stats['skipped']}, "
           f"помилок {_opt_stats['failed']}  ->  папка '{WEB_BASE}/'")
