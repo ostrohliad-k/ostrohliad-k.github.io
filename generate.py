@@ -699,7 +699,7 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
     <div class="contact-links">
       <a href="mailto:__EMAIL__">__EMAIL__</a>
       <a href="https://www.instagram.com/ostrohliad.k" target="_blank">Instagram ostrohliad.k</a>
-      <a href="https://ostrohliad.com" target="_blank">ostrohliad.com</a>
+      <a href="https://ostrohliad.photo" target="_blank">ostrohliad.photo</a>
     </div>
   </div>
   <div class="contact-right contact-cta">
