@@ -19,7 +19,7 @@ Q_FULL        = 80     # якість WebP для повного фото
 HERO_IMAGE    = "photos/Heros/Image.jpg"   # головна картинка
 ABOUT_IMAGE   = "photos/Heros/About.jpg"   # фото в розділі "Про мене" (додайте About.jpg у photos/Heros/)
 
-CONTACT_EMAIL = "ostrohliad.a@gmail.com"   # пошта, на яку приходять заявки
+CONTACT_EMAIL = "kateryna.ostrohlyd@icloud.com"   # пошта, на яку приходять заявки
 INSTAGRAM_USER = "ostrohliad.k"            # нік в Instagram (для прямого повідомлення в Direct)
 
 # ── Бронювання дати ──
