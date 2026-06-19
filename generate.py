@@ -163,24 +163,18 @@ def _make_webp(src, dst, max_side, quality):
 
 
 def optimize(src):
-    """Повертає (thumb_url, full_url) WebP-версій, створюючи їх за потреби.
-    Якщо обробка не вдалась — повертає оригінал як запасний варіант."""
+    """Повертає URL повнорозмірної WebP-версії (2000px), створюючи її за потреби.
+    Галерея показує фото у повному якості на всіх рівнях."""
     rel = os.path.relpath(src, PHOTOS_BASE)
     rel_webp = os.path.splitext(rel)[0] + ".webp"
-    thumb = os.path.join(WEB_BASE, "thumbs", rel_webp).replace("\\", "/")
     full = os.path.join(WEB_BASE, "full", rel_webp).replace("\\", "/")
-    ok_t = _make_webp(src, thumb, THUMB_MAX, Q_THUMB)
-    ok_f = _make_webp(src, full, FULL_MAX, Q_FULL)
-    return (thumb if ok_t else src), (full if ok_f else src)
+    ok = _make_webp(src, full, FULL_MAX, Q_FULL)
+    return full if ok else src
 
 
 def optimize_list(src_paths):
-    """[шлях, ...] -> [{'t': thumb, 'f': full}, ...]"""
-    out = []
-    for p in src_paths:
-        t, f = optimize(p)
-        out.append({"t": t, "f": f})
-    return out
+    """[шлях, ...] -> [url_повного_фото, ...]"""
+    return [optimize(p) for p in src_paths]
 
 
 def scan_category(folder_name):
@@ -256,13 +250,13 @@ def build_data():
         total += n
         cover_src = resolve_cover(CATEGORY_COVERS.get(key, ""))
         if cover_src and os.path.exists(cover_src):
-            data[key]["cover"] = optimize(cover_src)[1]   # повнорозмірна обкладинка (чітка)
+            data[key]["cover"] = optimize(cover_src)      # повнорозмірна обкладинка (чітка)
         else:
             if CATEGORY_COVERS.get(key):
                 print(f"  [!] Обкладинку '{CATEGORY_COVERS.get(key)}' не знайдено — беру перше фото")
-            for s in shoots:                              # авто: повнорозмірне перше фото
+            for s in shoots:                              # авто: перше фото
                 if s["photos"]:
-                    data[key]["cover"] = s["photos"][0]["f"]
+                    data[key]["cover"] = s["photos"][0]
                     break
         for s in shoots:           # прибрати службовий ключ перед JSON
             s.pop("folder", None)
@@ -758,7 +752,7 @@ function showCats(){
   crumb.innerHTML = '';
   body.innerHTML = '<div class="cat-squares">' + CAT_ORDER.map(key=>{
     const c = CATEGORIES[key];
-    const cover = c.cover || (c.shoots[0] && c.shoots[0].photos[0] && c.shoots[0].photos[0].t) || '';
+    const cover = c.cover || (c.shoots[0] && c.shoots[0].photos[0]) || '';
     const coverCss = encodeURI(cover).replace(/'/g, '%27');  // апострофи/пробіли в шляху не ламають url()
     return `<div class="cat-square" onclick="showShoots('${key}')" style="background-image:url('${coverCss}')">
       <div class="cat-square-inner">
@@ -777,7 +771,7 @@ function showShoots(key){
   if(!c.shoots.length){ body.innerHTML = '<p class="cat-empty">Зйомки ще не додані</p>'; return; }
   body.innerHTML = '<div class="shoot-grid">' + c.shoots.map((s,i)=>
     `<div class="shoot-card" onclick="showPhotos('${key}',${i})">
-      <div class="shoot-card-imgwrap"><img class="shoot-card-img" src="${s.photos[0].t}" alt="" loading="lazy"></div>
+      <div class="shoot-card-imgwrap"><img class="shoot-card-img" src="${s.photos[0]}" alt="" loading="lazy"></div>
       <span class="shoot-card-title">${s.title}</span>
       <span class="shoot-card-meta">${s.date ? s.date+' · ' : ''}${s.photos.length} фото</span>
     </div>`
@@ -790,9 +784,9 @@ function showPhotos(key, idx){
   crumb.innerHTML = `<button class="crumb-link" onclick="showCats()">Категорії</button>`
     + `<span class="crumb-sep">/</span><button class="crumb-link" onclick="showShoots('${key}')">${c.label}</button>`
     + `<span class="crumb-sep">/</span><span class="crumb-current">${s.title}</span>`;
-  lbPhotos = s.photos.map(p=>p.f);
+  lbPhotos = s.photos;
   body.innerHTML = '<div class="photo-grid">' + s.photos.map((p,i)=>
-    `<div class="photo-item" onclick="openLb(${i})"><img src="${p.t}" alt="" loading="lazy"></div>`
+    `<div class="photo-item" onclick="openLb(${i})"><img src="${p}" alt="" loading="lazy"></div>`
   ).join('') + '</div>';
   document.getElementById('gallery').scrollIntoView({behavior:'smooth'});
 }
@@ -1083,7 +1077,7 @@ def pick_cover(data, key, fallback):
     """Повнорозмірне (WebP) фото першої зйомки категорії — для розділу «Філософія»."""
     for shoot in data.get(key, {}).get("shoots", []):
         if shoot["photos"]:
-            return shoot["photos"][0]["f"]
+            return shoot["photos"][0]
     return fallback
 
 
@@ -1093,12 +1087,12 @@ def main():
     cats_js = json.dumps(data, ensure_ascii=False)
 
     # Оптимізуємо головне фото та фото «Про мене» (повнорозмірні WebP)
-    hero_full = optimize(HERO_IMAGE)[1] if os.path.exists(HERO_IMAGE) else HERO_IMAGE
-    about_full = optimize(ABOUT_IMAGE)[1] if os.path.exists(ABOUT_IMAGE) else ABOUT_IMAGE
+    hero_full = optimize(HERO_IMAGE) if os.path.exists(HERO_IMAGE) else HERO_IMAGE
+    about_full = optimize(ABOUT_IMAGE) if os.path.exists(ABOUT_IMAGE) else ABOUT_IMAGE
 
     # Фото для розділу «Філософія» (з папки Philosophy), із запасним варіантом
     def opt_or(path, fallback):
-        return optimize(path)[1] if path and os.path.exists(path) else fallback
+        return optimize(path) if path and os.path.exists(path) else fallback
     phil1 = opt_or(PHIL_PHOTOS[0] if len(PHIL_PHOTOS) > 0 else "", about_full)
     phil2 = opt_or(PHIL_PHOTOS[1] if len(PHIL_PHOTOS) > 1 else "", hero_full)
     phil3 = opt_or(PHIL_PHOTOS[2] if len(PHIL_PHOTOS) > 2 else "", about_full)
