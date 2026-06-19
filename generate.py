@@ -20,7 +20,7 @@ HERO_IMAGE    = "photos/Heros/Image.jpg"   # головна картинка
 ABOUT_IMAGE   = "photos/Heros/About.jpg"   # фото в розділі "Про мене" (додайте About.jpg у photos/Heros/)
 
 SITE_URL = "https://ostrohliad.photo"      # адреса сайту (для прев'ю при поширенні / SEO)
-CF_ANALYTICS_TOKEN = ""                     # токен Cloudflare Web Analytics (beacon). Порожньо — аналітика вимкнена.
+CF_ANALYTICS_TOKEN = "77a085fe9fb84fc2b75f57feda00b131"   # токен Cloudflare Web Analytics (beacon)
 CONTACT_EMAIL = "kateryna.ostrohlyd@icloud.com"   # пошта, на яку приходять заявки
 INSTAGRAM_USER = "ostrohliad.k"            # нік в Instagram (для прямого повідомлення в Direct)
 
