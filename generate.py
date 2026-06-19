@@ -270,6 +270,7 @@ TEMPLATE = r"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="google-site-verification" content="wGQbH5543vtJ87DDLQ4XBDMK_Q1kdpSsPNAlmuEeHYg">
 <title>Катя Острогляд — фотограф | портретна, сімейна, весільна зйомка</title>
 <meta name="description" content="Фотограф Катя Острогляд. Індивідуальні та портретні, сімейні, репортажні та весільні зйомки. Фотографія, яка повертає впевненість у собі.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
