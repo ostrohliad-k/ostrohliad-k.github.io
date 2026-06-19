@@ -11,9 +11,9 @@ PHOTOS_BASE   = "photos"
 #   web/thumbs/...  — прев'ю для сітки галереї
 #   web/full/...    — облегшені повнорозмірні для лайтбоксу
 WEB_BASE      = "web"
-THUMB_MAX     = 700    # макс. сторона прев'ю, px
+THUMB_MAX     = 1000   # макс. сторона прев'ю, px
 FULL_MAX      = 2000   # макс. сторона повного фото, px
-Q_THUMB       = 72     # якість WebP для прев'ю
+Q_THUMB       = 82     # якість WebP для прев'ю
 Q_FULL        = 80     # якість WebP для повного фото
 
 HERO_IMAGE    = "photos/Heros/Image.jpg"   # головна картинка
@@ -256,9 +256,14 @@ def build_data():
         total += n
         cover_src = resolve_cover(CATEGORY_COVERS.get(key, ""))
         if cover_src and os.path.exists(cover_src):
-            data[key]["cover"] = optimize(cover_src)[0]   # прев'ю-обкладинка
-        elif CATEGORY_COVERS.get(key):
-            print(f"  [!] Обкладинку '{CATEGORY_COVERS.get(key)}' не знайдено — беру перше фото")
+            data[key]["cover"] = optimize(cover_src)[1]   # повнорозмірна обкладинка (чітка)
+        else:
+            if CATEGORY_COVERS.get(key):
+                print(f"  [!] Обкладинку '{CATEGORY_COVERS.get(key)}' не знайдено — беру перше фото")
+            for s in shoots:                              # авто: повнорозмірне перше фото
+                if s["photos"]:
+                    data[key]["cover"] = s["photos"][0]["f"]
+                    break
         for s in shoots:           # прибрати службовий ключ перед JSON
             s.pop("folder", None)
         print(f"  {info['folder']}: {len(shoots)} зйомок, {n} фото")
