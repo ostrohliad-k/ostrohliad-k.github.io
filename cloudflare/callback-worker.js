@@ -37,10 +37,12 @@ export default {
         "Ім'я: " + name + "\n" +
         "Телефон: " + phone;
 
-      const r = await fetch("https://api.telegram.org/bot" + env.TG_BOT_TOKEN + "/sendMessage", {
+      const botToken = String(env.TG_BOT_TOKEN).trim();
+      const chatId = String(env.TG_CHAT_ID).trim();
+      const r = await fetch("https://api.telegram.org/bot" + botToken + "/sendMessage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: env.TG_CHAT_ID, text }),
+        body: JSON.stringify({ chat_id: chatId, text }),
       });
       const data = await r.json();
       if (!data.ok) return json({ error: "telegram_error", detail: data }, 502);
