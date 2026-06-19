@@ -280,6 +280,10 @@ TEMPLATE = r"""<!DOCTYPE html>
 <meta property="og:description" content="Індивідуальні, сімейні, репортажні та весільні зйомки. Фотографія, яка повертає впевненість у собі.">
 <meta property="og:url" content="__SITEURL__/">
 <meta property="og:image" content="__OGIMAGE__">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Катя Острогляд — фотограф">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Катя Острогляд — фотограф">
 <meta name="twitter:description" content="Індивідуальні, сімейні, репортажні та весільні зйомки.">
