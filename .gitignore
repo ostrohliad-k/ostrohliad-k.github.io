@@ -15,3 +15,7 @@ ostrohliad_portfolio.html
 # Python
 __pycache__/
 *.pyc
+
+# Wrangler (Cloudflare) — службовий кеш, не публікувати
+.wrangler/
+cloudflare/.wrangler/
