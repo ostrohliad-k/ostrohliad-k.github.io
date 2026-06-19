@@ -80,7 +80,7 @@ PHIL_PHOTOS = ["photos/Philosophy/IMG_6878.JPG", "photos/Philosophy/IMG_6932.JPG
 
 # Бекенд замовлення зворотного дзвінка (Cloudflare Worker -> Telegram).
 # Поки порожньо — форма відкриває Instagram Direct із даними у буфері обміну.
-CALLBACK_API_URL = ""
+CALLBACK_API_URL = "https://ostrohliad-callback.ostrohliad-k.workers.dev"
 # ══════════════════════════════════════════════════════════════════
 
 EXTS = {".jpg", ".jpeg", ".png", ".webp"}
