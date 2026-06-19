@@ -19,6 +19,7 @@ Q_FULL        = 80     # якість WebP для повного фото
 HERO_IMAGE    = "photos/Heros/Image.jpg"   # головна картинка
 ABOUT_IMAGE   = "photos/Heros/About.jpg"   # фото в розділі "Про мене" (додайте About.jpg у photos/Heros/)
 
+SITE_URL = "https://ostrohliad.photo"      # адреса сайту (для прев'ю при поширенні / SEO)
 CONTACT_EMAIL = "kateryna.ostrohlyd@icloud.com"   # пошта, на яку приходять заявки
 INSTAGRAM_USER = "ostrohliad.k"            # нік в Instagram (для прямого повідомлення в Direct)
 
@@ -269,7 +270,20 @@ TEMPLATE = r"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ostrohliad — Директор &amp; Фотограф</title>
+<title>Катя Острогляд — фотограф | портретна, сімейна, весільна зйомка</title>
+<meta name="description" content="Фотограф Катя Острогляд. Індивідуальні та портретні, сімейні, репортажні та весільні зйомки. Фотографія, яка повертає впевненість у собі.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Катя Острогляд — фотограф">
+<meta property="og:title" content="Катя Острогляд — фотограф">
+<meta property="og:description" content="Індивідуальні, сімейні, репортажні та весільні зйомки. Фотографія, яка повертає впевненість у собі.">
+<meta property="og:url" content="__SITEURL__/">
+<meta property="og:image" content="__OGIMAGE__">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Катя Острогляд — фотограф">
+<meta name="twitter:description" content="Індивідуальні, сімейні, репортажні та весільні зйомки.">
+<meta name="twitter:image" content="__OGIMAGE__">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@200;300;400&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -458,6 +472,11 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
 
 .fade-up{opacity:0;transform:translateY(24px);transition:opacity 0.9s,transform 0.9s}
 .fade-up.visible{opacity:1;transform:translateY(0)}
+
+.to-top{position:fixed;right:1.7rem;bottom:1.7rem;width:46px;height:46px;border-radius:50%;border:none;background:var(--charcoal);color:#fff;font-size:1.15rem;line-height:1;cursor:pointer;opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity 0.3s,visibility 0.3s,transform 0.3s,background 0.3s;z-index:90}
+.to-top.show{opacity:1;visibility:visible;transform:translateY(0)}
+.to-top:hover{background:var(--accent)}
+@media(max-width:600px){.to-top{right:1rem;bottom:1rem;width:42px;height:42px;font-size:1.05rem}}
 
 @media(max-width:1100px){.price-grid{grid-template-columns:repeat(2,1fr)}.process-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:960px){
@@ -733,6 +752,8 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
   <span class="lb-counter" id="lb-counter"></span>
 </div>
 
+<button class="to-top" id="to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Наверх">&#x2191;</button>
+
 <script>
 const CATEGORIES = __CATS_JSON__;
 const CAT_ORDER = ["individual","family","reportage","wedding"];
@@ -858,6 +879,10 @@ if(cbForm){
 /* — анімації — */
 const obs = new IntersectionObserver(e=>e.forEach(x=>{ if(x.isIntersecting) x.target.classList.add('visible'); }), {threshold:0.08});
 document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+
+/* — кнопка «наверх» — */
+const toTop = document.getElementById('to-top');
+window.addEventListener('scroll', ()=>{ toTop.classList.toggle('show', window.scrollY > 600); }, {passive:true});
 
 /* старт */
 showCats();
@@ -1097,6 +1122,16 @@ def main():
     phil2 = opt_or(PHIL_PHOTOS[1] if len(PHIL_PHOTOS) > 1 else "", hero_full)
     phil3 = opt_or(PHIL_PHOTOS[2] if len(PHIL_PHOTOS) > 2 else "", about_full)
 
+    # OG-зображення для прев'ю при поширенні (JPG 1200x630 — підтримується всюди)
+    try:
+        from PIL import Image, ImageOps
+        if os.path.exists(HERO_IMAGE):
+            im = ImageOps.exif_transpose(Image.open(HERO_IMAGE)).convert("RGB")
+            ImageOps.fit(im, (1200, 630), Image.LANCZOS).save("og-image.jpg", "JPEG", quality=85)
+    except Exception as e:
+        print("  [!] OG-зображення:", e)
+    og_image = SITE_URL.rstrip("/") + "/og-image.jpg"   # абсолютний URL прев'ю
+
     html = (TEMPLATE
             .replace("__CATS_JSON__", cats_js)
             .replace("__HERO__", hero_full)
@@ -1105,6 +1140,8 @@ def main():
             .replace("__PHIL2__", phil2)
             .replace("__PHIL3__", phil3)
             .replace("__CALLBACK_API__", CALLBACK_API_URL)
+            .replace("__SITEURL__", SITE_URL.rstrip("/"))
+            .replace("__OGIMAGE__", og_image)
             .replace("__EMAIL__", CONTACT_EMAIL)
             .replace("__INSTAGRAM__", INSTAGRAM_USER))
 
