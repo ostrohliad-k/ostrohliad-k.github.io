@@ -288,6 +288,9 @@ TEMPLATE = r"""<!DOCTYPE html>
 <meta name="twitter:title" content="Катя Острогляд — фотограф">
 <meta name="twitter:description" content="Індивідуальні, сімейні, репортажні та весільні зйомки.">
 <meta name="twitter:image" content="__OGIMAGE__">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":["Person","ProfessionalService"],"name":"Катя Острогляд","jobTitle":"Фотограф","description":"Фотограф. Індивідуальні та портретні, сімейні, репортажні та весільні зйомки.","url":"__SITEURL__","image":"__OGIMAGE__","email":"__EMAIL__","sameAs":["https://www.instagram.com/__INSTAGRAM__"],"areaServed":"UA","knowsLanguage":["uk"]}
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@200;300;400&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -316,6 +319,11 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content
 .hero-sub{font-size:0.98rem;letter-spacing:0.02em;line-height:1.85;color:rgba(255,255,255,0.8);max-width:460px;margin-bottom:2.5rem}
 .btn-outline{display:inline-block;padding:0.85rem 2.4rem;border:1px solid rgba(255,255,255,0.35);font-size:0.58rem;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.85);text-decoration:none;transition:all 0.4s;background:transparent}
 .btn-outline:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.65)}
+.hero-scroll{position:absolute;left:50%;bottom:1.8rem;transform:translateX(-50%);width:30px;height:46px;border:1px solid rgba(255,255,255,0.4);border-radius:16px;z-index:3;transition:opacity 0.5s}
+.hero-scroll span{position:absolute;left:50%;top:9px;width:3px;height:8px;margin-left:-1.5px;background:rgba(255,255,255,0.7);border-radius:2px;animation:heroScroll 1.6s ease-in-out infinite}
+@keyframes heroScroll{0%{opacity:0;transform:translateY(0)}30%{opacity:1}60%{opacity:1;transform:translateY(14px)}100%{opacity:0;transform:translateY(14px)}}
+.hero-scroll.hide{opacity:0;pointer-events:none}
+@media(max-width:600px){.hero-scroll{bottom:1.1rem}}
 
 .gallery{padding:6.5rem 3.5rem 6rem;background:var(--cream);min-height:80vh}
 .gallery-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2.5rem}
@@ -344,14 +352,16 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content
 .shoot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 .shoot-card{cursor:pointer}
 .shoot-card-imgwrap{overflow:hidden;background:var(--bone);aspect-ratio:4/5}
-.shoot-card-img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(12%);transition:transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94),filter 0.5s}
+.shoot-card-img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(12%);opacity:0;transition:transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94),filter 0.5s,opacity 0.6s ease}
+.shoot-card-img.ld{opacity:1}
 .shoot-card:hover .shoot-card-img{transform:scale(1.04);filter:grayscale(0)}
 .shoot-card-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.25rem;color:var(--charcoal);display:block;line-height:1.3;margin-top:0.9rem}
 .shoot-card-meta{font-size:0.66rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--warm-gray);margin-top:0.35rem;display:block}
 
 .photo-grid{columns:3;column-gap:12px}
 .photo-item{break-inside:avoid;margin-bottom:12px;overflow:hidden;position:relative;cursor:pointer;background:var(--bone)}
-.photo-item img{width:100%;display:block;transition:transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94),filter 0.5s;filter:grayscale(12%)}
+.photo-item img{width:100%;display:block;transition:transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94),filter 0.5s,opacity 0.6s ease;filter:grayscale(12%);opacity:0}
+.photo-item img.ld{opacity:1}
 .photo-item:hover img{transform:scale(1.04);filter:grayscale(0)}
 
 .cat-empty{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-style:italic;color:var(--warm-gray);padding:3rem 0;text-align:center}
@@ -563,6 +573,7 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
     <p class="hero-sub">Моя місія — допомогти вам віднайти впевненість у собі через портретні та індивідуальні фотосесії. Я зупиняю час крізь чуттєві лав сторі та теплі сімейні кадри, а також ловлю справжнє життя у щирих та ефектних репортажах.</p>
     <a class="btn-outline" href="#gallery">Переглянути роботи</a>
   </div>
+  <a class="hero-scroll" id="hero-scroll" href="#gallery" aria-label="Прокрутити вниз"><span></span></a>
 </section>
 
 <section class="gallery" id="gallery">
@@ -796,7 +807,7 @@ function showShoots(key){
   if(!c.shoots.length){ body.innerHTML = '<p class="cat-empty">Зйомки ще не додані</p>'; return; }
   body.innerHTML = '<div class="shoot-grid">' + c.shoots.map((s,i)=>
     `<div class="shoot-card" onclick="showPhotos('${key}',${i})">
-      <div class="shoot-card-imgwrap"><img class="shoot-card-img" src="${s.photos[0]}" alt="" loading="lazy"></div>
+      <div class="shoot-card-imgwrap"><img class="shoot-card-img" src="${s.photos[0]}" alt="" loading="lazy" onload="this.classList.add('ld')"></div>
       <span class="shoot-card-title">${s.title}</span>
       <span class="shoot-card-meta">${s.date ? s.date+' · ' : ''}${s.photos.length} фото</span>
     </div>`
@@ -811,7 +822,7 @@ function showPhotos(key, idx){
     + `<span class="crumb-sep">/</span><span class="crumb-current">${s.title}</span>`;
   lbPhotos = s.photos;
   body.innerHTML = '<div class="photo-grid">' + s.photos.map((p,i)=>
-    `<div class="photo-item" onclick="openLb(${i})"><img src="${p}" alt="" loading="lazy"></div>`
+    `<div class="photo-item" onclick="openLb(${i})"><img src="${p}" alt="" loading="lazy" onload="this.classList.add('ld')"></div>`
   ).join('') + '</div>';
   document.getElementById('gallery').scrollIntoView({behavior:'smooth'});
 }
@@ -837,6 +848,16 @@ document.addEventListener('keydown', e=>{
   if(e.key==='ArrowLeft') prevLb();
   if(e.key==='ArrowRight') nextLb();
 });
+/* — свайп по фото на телефоні — */
+let _touchX = null;
+const _lb = document.getElementById('lightbox');
+_lb.addEventListener('touchstart', e=>{ _touchX = e.changedTouches[0].clientX; }, {passive:true});
+_lb.addEventListener('touchend', e=>{
+  if(_touchX===null) return;
+  const dx = e.changedTouches[0].clientX - _touchX;
+  if(Math.abs(dx) > 45){ dx < 0 ? nextLb() : prevLb(); }
+  _touchX = null;
+}, {passive:true});
 
 /* — меню — */
 function toggleMenu(){ document.getElementById('nav-links').classList.toggle('open'); }
@@ -884,9 +905,13 @@ if(cbForm){
 const obs = new IntersectionObserver(e=>e.forEach(x=>{ if(x.isIntersecting) x.target.classList.add('visible'); }), {threshold:0.08});
 document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
 
-/* — кнопка «наверх» — */
+/* — кнопка «наверх» + підказка прокрутки — */
 const toTop = document.getElementById('to-top');
-window.addEventListener('scroll', ()=>{ toTop.classList.toggle('show', window.scrollY > 600); }, {passive:true});
+const heroScroll = document.getElementById('hero-scroll');
+window.addEventListener('scroll', ()=>{
+  toTop.classList.toggle('show', window.scrollY > 600);
+  if(heroScroll) heroScroll.classList.toggle('hide', window.scrollY > 80);
+}, {passive:true});
 
 /* старт */
 showCats();
