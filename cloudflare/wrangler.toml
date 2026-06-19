@@ -4,7 +4,7 @@ compatibility_date = "2024-11-01"
 
 # Куди слати сповіщення (твій chat_id у Telegram). Не секрет.
 [vars]
-TG_CHAT_ID = "386063713"
+TG_CHAT_ID = "564695576"
 
 # Секрет TG_BOT_TOKEN додається окремо (не сюди):
 #   wrangler secret put TG_BOT_TOKEN
