@@ -698,7 +698,7 @@ footer p{font-size:0.66rem;letter-spacing:0.08em;color:rgba(255,255,255,0.35)}
     <p class="contact-tagline">Готові створити<br>щось <em>прекрасне</em><br>разом?</p>
     <div class="contact-links">
       <a href="mailto:__EMAIL__">__EMAIL__</a>
-      <a href="https://www.instagram.com/ostrohliad.k" target="_blank">Instagram @ostrohliad.k</a>
+      <a href="https://www.instagram.com/ostrohliad.k" target="_blank">Instagram ostrohliad.k</a>
       <a href="https://ostrohliad.com" target="_blank">ostrohliad.com</a>
     </div>
   </div>
